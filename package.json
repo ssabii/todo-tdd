@@ -63,5 +63,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@swc/cli": "^0.1.57",
+    "@swc/jest": "^0.2.23"
   }
 }
