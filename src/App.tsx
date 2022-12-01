@@ -20,7 +20,7 @@ const App = () => {
       <header className="App-header">
         <h1 data-testid="header-title">Todo List</h1>
       </header>
-      <main>
+      <main className="App-main">
         <ul data-testid="list">
           {todos.map((todo) => (
             <li key={todo.key}>{todo.value}</li>
