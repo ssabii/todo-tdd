@@ -1,6 +1,10 @@
+import * as uuid from "uuid";
 import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import App from "./App";
+import { LOCAL_STORAGE_KEY } from "./constants";
+
+jest.mock("uuid");
 
 describe("App", () => {
   it("페이지 제목으로 'Todo List'가 출력되어야 한다.", () => {
@@ -13,34 +17,63 @@ describe("App", () => {
     expect(title).toHaveTextContent("Todo List");
   });
 
-  it("새로운 todo를 추가할 수 있어야 한다.", () => {
-    // given
-    render(<App />);
+  describe("추가", () => {
+    let uuidSpy: jest.SpyInstance;
 
-    // when
-    const input = screen.getByTestId("add-input");
-    fireEvent.change(input, { target: { value: "Lorem Ipsum" } });
-    fireEvent.keyDown(input, { key: "Enter", code: "Enter", keyCode: 13 });
+    beforeEach(() => {
+      uuidSpy = jest
+        .spyOn(uuid, "v4")
+        .mockReturnValueOnce("asdf")
+        .mockReturnValueOnce("qwer");
+    });
 
-    // then
-    const list = screen.getByTestId("list");
-    expect(list).toHaveTextContent("Lorem Ipsum");
-  });
+    afterEach(() => {
+      globalThis.localStorage.clear();
+      uuidSpy.mockClear();
+    });
 
-  it("이미 todo가 존재하는 상태에서 다음 todo를 입력하는 경우 todo 목록에 새 todo가 추가돼야 한다.", () => {
-    // given
-    render(<App />);
-    const input = screen.getByTestId("add-input");
-    fireEvent.change(input, { target: { value: "Lorem Ipsum" } });
-    fireEvent.keyDown(input, { key: "Enter", code: "Enter", keyCode: 13 });
+    it("새로운 todo를 추가하고 로컬 스토리지에 저장할 수 있어야 한다.", () => {
+      // given
+      render(<App />);
 
-    // when
-    fireEvent.change(input, { target: { value: "Dolor Sit" } });
-    fireEvent.keyDown(input, { key: "Enter", code: "Enter", keyCode: 13 });
+      // when
+      const input = screen.getByTestId("add-input");
+      fireEvent.change(input, { target: { value: "Lorem Ipsum" } });
+      fireEvent.keyDown(input, { key: "Enter", code: "Enter", keyCode: 13 });
 
-    // then
-    const list = screen.getByTestId("list");
-    expect(list).toHaveTextContent("Lorem Ipsum");
-    expect(list).toHaveTextContent("Dolor Sit");
+      // then
+      const list = screen.getByTestId("list");
+      expect(list).toHaveTextContent("Lorem Ipsum");
+      expect(globalThis.localStorage.getItem(LOCAL_STORAGE_KEY)).toBe(
+        JSON.stringify({
+          data: [{ key: "asdf", value: "Lorem Ipsum" }],
+        })
+      );
+    });
+
+    it("이미 todo가 존재하는 상태에서 다음 todo를 입력하는 경우 todo 목록에 새 todo가 추가돼야 한다.", () => {
+      // given
+      render(<App />);
+      const input = screen.getByTestId("add-input");
+      fireEvent.change(input, { target: { value: "Lorem Ipsum" } });
+      fireEvent.keyDown(input, { key: "Enter", code: "Enter", keyCode: 13 });
+
+      // when
+      fireEvent.change(input, { target: { value: "Dolor Sit" } });
+      fireEvent.keyDown(input, { key: "Enter", code: "Enter", keyCode: 13 });
+
+      // then
+      const list = screen.getByTestId("list");
+      expect(list).toHaveTextContent("Lorem Ipsum");
+      expect(list).toHaveTextContent("Dolor Sit");
+      expect(globalThis.localStorage.getItem(LOCAL_STORAGE_KEY)).toBe(
+        JSON.stringify({
+          data: [
+            { key: "asdf", value: "Lorem Ipsum" },
+            { key: "qwer", value: "Dolor Sit" },
+          ],
+        })
+      );
+    });
   });
 });
